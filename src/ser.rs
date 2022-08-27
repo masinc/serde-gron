@@ -29,12 +29,6 @@ impl ser::Error for Error {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum FormatType {
-    Regular,
-    Color,
-}
-
 pub fn to_string(value: &impl Serialize) -> Result<String, Error> {
     to_string_with(value, "json", FormatType::Regular)
 }
@@ -79,6 +73,14 @@ pub fn to_writer_with(
     };
 
     Ok(())
+}
+
+#[derive(Debug, Clone)]
+pub enum FormatType {
+    /// Non colored output
+    Regular,
+    /// Colored output
+    Color,
 }
 
 #[derive(Debug)]
