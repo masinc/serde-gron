@@ -35,31 +35,50 @@ pub enum FormatType {
     Color,
 }
 
-pub fn to_string<T: Serialize>(value: &T) -> Result<String, Error> {
+pub fn to_string(value: &impl Serialize) -> Result<String, Error> {
     to_string_with(value, "json", FormatType::Regular)
 }
 
-pub fn to_string_with<T: Serialize>(
-    value: &T,
+pub fn to_colored_string(value: &impl Serialize) -> Result<String, Error> {
+    to_string_with(value, "json", FormatType::Color)
+}
+
+pub fn to_string_with(
+    value: &impl Serialize,
     root_name: impl Into<String>,
     format_type: FormatType,
 ) -> Result<String, Error> {
     let mut writer = vec![];
+    to_writer_with(value, &mut writer, root_name, format_type)?;
+    Ok(String::from_utf8(writer).unwrap())
+}
 
+pub fn to_writer(value: &impl Serialize, writer: &mut impl io::Write) -> Result<(), Error> {
+    to_writer_with(value, writer, "json", FormatType::Regular)
+}
+
+pub fn to_colored_writer(value: &impl Serialize, writer: &mut impl io::Write) -> Result<(), Error> {
+    to_writer_with(value, writer, "json", FormatType::Color)
+}
+
+pub fn to_writer_with(
+    value: &impl Serialize,
+    writer: &mut impl io::Write,
+    root_name: impl Into<String>,
+    format_type: FormatType,
+) -> Result<(), Error> {
     match format_type {
         FormatType::Regular => {
-            let mut ser =
-                Serializer::<_, RegularFormatter>::new_with_root_name(&mut writer, root_name);
+            let mut ser = Serializer::<_, RegularFormatter>::new_with_root_name(writer, root_name);
             value.serialize(&mut ser)?;
         }
         FormatType::Color => {
-            let mut ser =
-                Serializer::<_, ColorFormatter>::new_with_root_name(&mut writer, root_name);
+            let mut ser = Serializer::<_, ColorFormatter>::new_with_root_name(writer, root_name);
             value.serialize(&mut ser)?;
         }
-    }
+    };
 
-    Ok(String::from_utf8(writer).unwrap())
+    Ok(())
 }
 
 #[derive(Debug)]
