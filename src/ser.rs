@@ -291,8 +291,15 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::Serializer for &'a mut Serializer<W
         Ok(())
     }
 
-    fn serialize_bytes(self, _v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
+        let mut seq = self.serialize_seq(Some(v.len()))?;
+
+        for b in v {
+            ser::SerializeSeq::serialize_element(&mut seq, b)?;
+        }
+        ser::SerializeSeq::end(seq)?;
+
+        Ok(())
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
@@ -303,7 +310,7 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::Serializer for &'a mut Serializer<W
     where
         T: Serialize,
     {
-        todo!()
+        value.serialize(self)
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
@@ -320,27 +327,27 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::Serializer for &'a mut Serializer<W
     }
 
     fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
-        unimplemented!()
+        self.serialize_unit()
     }
 
     fn serialize_unit_variant(
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
+        variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
-        unimplemented!()
+        self.serialize_str(variant)
     }
 
     fn serialize_newtype_struct<T: ?Sized>(
         self,
         _name: &'static str,
-        _value: &T,
+        value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
         T: Serialize,
     {
-        unimplemented!()
+        value.serialize(self)
     }
 
     fn serialize_newtype_variant<T: ?Sized>(
@@ -362,16 +369,16 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::Serializer for &'a mut Serializer<W
         Ok(self)
     }
 
-    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        unimplemented!()
+    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
+        self.serialize_seq(Some(len))
     }
 
     fn serialize_tuple_struct(
         self,
         _name: &'static str,
-        _len: usize,
+        len: usize,
     ) -> Result<Self::SerializeTupleStruct, Self::Error> {
-        unimplemented!()
+        self.serialize_seq(Some(len))
     }
 
     fn serialize_tuple_variant(
@@ -379,9 +386,9 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::Serializer for &'a mut Serializer<W
         _name: &'static str,
         _variant_index: u32,
         _variant: &'static str,
-        _len: usize,
+        len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
-        unimplemented!()
+        self.serialize_seq(Some(len))
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
@@ -392,9 +399,9 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::Serializer for &'a mut Serializer<W
     fn serialize_struct(
         self,
         _name: &'static str,
-        _len: usize,
+        len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error> {
-        unimplemented!()
+        self.serialize_map(Some(len))
     }
 
     fn serialize_struct_variant(
@@ -402,9 +409,9 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::Serializer for &'a mut Serializer<W
         _name: &'static str,
         _variant_index: u32,
         _variant: &'static str,
-        _len: usize,
+        len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
-        unimplemented!()
+        self.serialize_map(Some(len))
     }
 }
 
@@ -495,11 +502,11 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::SerializeStruct for &'a mut Seriali
     where
         T: Serialize,
     {
-        todo!()
+        ser::SerializeMap::serialize_entry(self, key, value)
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        ser::SerializeMap::end(self)
     }
 }
 
@@ -511,11 +518,11 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::SerializeTupleStruct for &'a mut Se
     where
         T: Serialize,
     {
-        todo!()
+        ser::SerializeSeq::serialize_element(self, value)
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        ser::SerializeSeq::end(self)
     }
 }
 
@@ -527,11 +534,11 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::SerializeTupleVariant for &'a mut S
     where
         T: Serialize,
     {
-        todo!()
+        ser::SerializeSeq::serialize_element(self, value)
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        ser::SerializeSeq::end(self)
     }
 }
 
@@ -547,11 +554,11 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::SerializeStructVariant for &'a mut 
     where
         T: Serialize,
     {
-        todo!()
+        ser::SerializeMap::serialize_entry(self, key, value)
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        ser::SerializeMap::end(self)
     }
 }
 
