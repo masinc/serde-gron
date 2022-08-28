@@ -75,7 +75,7 @@ pub fn to_writer_with(
     Ok(())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FormatType {
     /// Non colored output
     Regular,
