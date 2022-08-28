@@ -563,16 +563,6 @@ impl<'a, W: io::Write, F: Formatter<W>> ser::SerializeStructVariant for &'a mut 
 }
 
 static RE_OBJECT_KEY: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z][a-zA-Z0-9_]*$").unwrap());
-fn write_key_object(writer: &mut String, key: &str) -> Result<(), std::fmt::Error> {
-    use std::fmt::Write as _;
-
-    if RE_OBJECT_KEY.is_match(key) {
-        write!(writer, ".{key}")
-    } else {
-        write!(writer, "[\"{key}\"]")
-    }
-}
-
 #[derive(Debug, Default)]
 pub struct RegularFormatter;
 
@@ -584,7 +574,13 @@ impl<W: io::Write> Formatter<W> for RegularFormatter {
         for ns in nss.iter() {
             match ns {
                 NamespaceKey::Array(n) => write!(res, "[{n}]").unwrap(),
-                NamespaceKey::Object(k) => write_key_object(&mut res, k).unwrap(),
+                NamespaceKey::Object(k) => {
+                    if RE_OBJECT_KEY.is_match(k) {
+                        write!(res, ".{k}").unwrap();
+                    } else {
+                        write!(res, "[\"{k}\"]").unwrap();
+                    }
+                }
             };
         }
 
@@ -629,38 +625,71 @@ pub struct ColorFormatter;
 
 impl<W: io::Write> Formatter<W> for ColorFormatter {
     fn write_key(&self, writer: &mut W, ns_root: &str, nss: &[NamespaceKey]) -> Result<(), Error> {
-        todo!()
+        use colored::Colorize;
+        use std::fmt::Write as _;
+
+        let mut res = String::new();
+        write!(res, "{}", ns_root.blue()).unwrap();
+        for ns in nss.iter() {
+            match ns {
+                NamespaceKey::Array(n) => {
+                    let sb = "[".magenta();
+                    let eb = "]".magenta();
+                    let n = n.to_string().red();
+                    write!(res, "{sb}{n}{eb}").unwrap();
+                }
+                NamespaceKey::Object(k) => {
+                    if RE_OBJECT_KEY.is_match(k) {
+                        let k = k.blue();
+                        write!(res, ".{k}").unwrap();
+                    } else {
+                        let k = k.yellow();
+                        write!(res, "[\"{k}\"]").unwrap();
+                    }
+                }
+            };
+        }
+
+        write!(writer, "{res}").map_err(Error::Io)
     }
 
     fn write_key_value_delimiter(&self, wriiter: &mut W) -> Result<(), Error> {
-        todo!()
+        write!(wriiter, " = ").map_err(Error::Io)
     }
 
     fn write_end_of_line(&self, writer: &mut W) -> Result<(), Error> {
-        todo!()
+        writeln!(writer, ";").map_err(Error::Io)
     }
 
     fn write_null(&self, writer: &mut W) -> Result<(), Error> {
-        todo!()
+        use colored::Colorize;
+        write!(writer, "{}", "null".cyan()).map_err(Error::Io)
     }
 
     fn write_bool(&self, writer: &mut W, value: bool) -> Result<(), Error> {
-        todo!()
+        use colored::Colorize;
+        write!(writer, "{}", value.to_string().cyan()).map_err(Error::Io)
     }
 
     fn write_number<N: num::Num + Display>(&self, writer: &mut W, value: N) -> Result<(), Error> {
-        todo!()
+        use colored::Colorize;
+        write!(writer, "{}", value.to_string().red()).map_err(Error::Io)
     }
 
     fn write_string(&self, writer: &mut W, value: &str) -> Result<(), Error> {
-        todo!()
+        use colored::Colorize;
+
+        let s = format!("\"{}\"", value).yellow();
+        write!(writer, "{s}").map_err(Error::Io)
     }
 
     fn write_init_array(&self, writer: &mut W) -> Result<(), Error> {
-        todo!()
+        use colored::Colorize;
+        write!(writer, "{}", "[]".magenta()).map_err(Error::Io)
     }
 
     fn write_init_object(&self, writer: &mut W) -> Result<(), Error> {
-        todo!()
+        use colored::Colorize;
+        write!(writer, "{}", "{}".magenta()).map_err(Error::Io)
     }
 }
