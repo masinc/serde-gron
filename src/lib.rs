@@ -2,6 +2,7 @@ mod ser;
 
 pub use ser::{
     to_colored_string, to_colored_writer, to_string, to_string_with, to_writer, to_writer_with,
+    FormatType,
 };
 
 #[cfg(test)]
