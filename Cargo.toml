@@ -1,7 +1,7 @@
 [package]
 name = "serde-gron"
 description = "Provides serialize/deserialize of serde in gron format."
-version = "0.1.0"
+version = "0.1.1"
 authors = ["masinc <masinc000@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
